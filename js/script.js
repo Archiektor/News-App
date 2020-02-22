@@ -3,7 +3,7 @@ const select = document.querySelector('#country');
 
 select.addEventListener('change', e => {
     let currentCountry = e.target.value;
-    newsService.showTopNews(currentCountry);
+    newsService.showTopNews(currentCountry, onGetResponse);
 });
 
 const newsService = (function () {
@@ -12,7 +12,7 @@ const newsService = (function () {
 
     return {
         showTopNews(country = 'pl', cb) {
-            let url = `${apiUrl}/top-headlines?country=${country}&apiKey=${apiKey}`;
+            let url = `${apiUrl}/top-headlines?country=${country}&category=technology&apiKey=${apiKey}`;
 
             customHttp().get(url, cb);
         },
@@ -38,9 +38,39 @@ function onGetResponse(err, res) {
 
 //function Render News
 function renderNews(news) {
+    const container = document.querySelector('.news-container .row');
+    let fragment;
+
     news.forEach(item => {
-        console.log(item.title);
-    })
+        const elem = itemTemplate(item);
+        fragment += elem;
+    });
+
+    let modifiedFragment = fragment.slice(10);
+
+    container.insertAdjacentHTML('afterbegin', modifiedFragment);
+
+}
+
+// News item template function
+function itemTemplate({urlToImage, title, url, description}) {
+
+    return `
+    <div class="col s12">
+    <div class="card">
+       <div class="card-image">
+       <img src="${urlToImage}" alt="">
+       <span class="card-title">${title || ''}</span>
+    </div>
+    <div class="card-content">
+        <p>${description || ''}</p>
+    </div>
+    <div class="card-action">
+        <a href="${url}">Read more</a>
+    </div>
+    </div>
+    </div>
+    `
 }
 
 
