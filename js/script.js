@@ -1,9 +1,20 @@
 // UI Elements
 const select = document.querySelector('#country');
 
+//Elemetns
+const form = document.forms['newsControls'];
+const searchInput = form.elements['search'];
+
+//Event Listeners
 select.addEventListener('change', e => {
     let currentCountry = e.target.value;
     newsService.showTopNews(currentCountry, onGetResponse);
+});
+
+form.addEventListener('submit', e => {
+    e.preventDefault();
+    let searchWord = searchInput.value;
+    newsService.showSearchNews(searchWord, onGetResponse);
 });
 
 const newsService = (function () {
@@ -18,39 +29,74 @@ const newsService = (function () {
         },
         showSearchNews(search, cb) {
             let url = `${apiUrl}/everything?q=${search}&sortBy=popularity&apiKey=${apiKey}`;
-
             customHttp().get(url, cb);
+
         },
     }
 })();
 
-
 // Load news
 function loadNews() {
     const initCountry = select.value;
-    newsService.showTopNews(initCountry, onGetResponse);
+    const searchWord = searchInput.value;
+
+    if (!searchWord) {
+        newsService.showTopNews(initCountry, onGetResponse);
+    } else {
+        newsService.showSearchNews(searchWord, onGetResponse);
+    }
+
 }
 
 // function getResponse
 function onGetResponse(err, res) {
+    if (err) {
+        showAlert(err, 'error-msg');
+        return;
+    }
+    if (!res.articles.length) {
+        showAlert('No elements to show', 'no-article-msg');
+        return;
+    }
     renderNews(res.articles);
 }
 
 //function Render News
 function renderNews(news) {
     const container = document.querySelector('.news-container .row');
-    let fragment;
+    if (container.children.length) {
+        clearContainer(container);
+    }
+    searchInput.value = '';
+    let fragment = '';
 
     news.forEach(item => {
         const elem = itemTemplate(item);
         fragment += elem;
     });
 
-    let modifiedFragment = fragment.slice(10);
-
-    container.insertAdjacentHTML('afterbegin', modifiedFragment);
-
+    container.insertAdjacentHTML('afterbegin', fragment);
 }
+
+//function clearContainer
+function clearContainer(container) {
+    let child = container.lastElementChild;
+
+    while (child) {
+        container.removeChild(child);
+        child = container.lastElementChild;
+    }
+}
+
+//function showPreloader
+function showPreloader() {
+    document.body.insertAdjacentHTML('afterbegin', `
+    <div class="progress">
+      <div class="indeterminate"></div>
+    </div>`)
+}
+
+//function stopPreloader
 
 // News item template function
 function itemTemplate({urlToImage, title, url, description}) {
@@ -71,6 +117,11 @@ function itemTemplate({urlToImage, title, url, description}) {
     </div>
     </div>
     `
+}
+
+//function showAlert
+function showAlert(msg, type = 'successs') {
+    M.toast({html: msg, classes: type});
 }
 
 
